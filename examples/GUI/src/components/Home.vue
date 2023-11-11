@@ -1,0 +1,532 @@
+<script setup lang="ts">
+import { Download, Switch } from "@element-plus/icons-vue";
+import { defineComponent, watch, ref, onMounted } from "vue";
+import { SystemStore } from "@/store/SystemStore.js";
+import { Api } from "@/utils/Http";
+import {
+  platformListv2,
+  MetaInfomationSupport,
+  MetaInfomationSupportOptions,
+  MetaInfomationSupportTypes,
+} from "@/utils/Utils";
+import { ElDivider, ElMessage } from "element-plus";
+
+const { basicStore } = SystemStore();
+
+const save_config = () => {
+  Api.setBaseConfig({
+    num: basicStore.config.concurrency.num,
+    folder: basicStore.config.concurrency.downloadFolder,
+    lyric: basicStore.config.concurrency.saveLyric,
+  }).then((r) => {});
+};
+
+const customKey = ref("");
+
+const title_height = ref();
+
+const title_height_size = ref(0);
+
+onMounted(() => {
+  title_height_size.value = title_height.value.clientHeight;
+});
+
+const loadConfig = () => {
+  Api.getBaseConfig().then((r) => {
+    basicStore.config.concurrency.num = r.num;
+    basicStore.config.concurrency.downloadFolder = r.folder;
+    basicStore.config.concurrency.saveLyric = r.lyric;
+  });
+};
+
+loadConfig();
+
+/**
+ * delete key
+ * @param key
+ */
+const deleteKeys = (key: string) => {
+  let i = 0;
+  for (let it of basicStore.filterKeys) {
+    if (it === key) {
+      basicStore.filterKeys.splice(i, 1);
+      return;
+    }
+    i++;
+  }
+};
+
+const enterClick = (ev: KeyboardEvent) => {
+  if (ev.key === "Enter") {
+    basicStore.filterKeys.push(customKey.value);
+    customKey.value = "";
+  }
+};
+
+const addFilter = function (obj: any) {
+  obj.metas.push({
+    meta_support: "iTunes",
+    meta_option: "reflect",
+    meta_types: "albumName",
+    from: "",
+    to: "",
+  });
+};
+
+const addFilterBase = function () {
+  basicStore.MusicMetaPrepare.push({
+    platform: "mg",
+    metas: [
+      {
+        meta_support: "iTunes",
+        meta_option: "reflect",
+        meta_types: "albumName",
+        from: "",
+        to: "",
+      },
+    ],
+  });
+};
+
+const selectOptions = ref(false);
+const importorexport = ref(false);
+const localConfiguration = ref("");
+const optionOps = ref({
+  title: "",
+  data: {} as any,
+  target: {} as any,
+});
+
+let stopWatch: any = null;
+
+const showOptions = (selectData: any, callback: Function, lstData: any) => {
+  optionOps.value.data = lstData;
+  if (stopWatch !== null) stopWatch();
+  stopWatch = watch(
+    optionOps,
+    (nl, old) => {
+      callback(nl.target);
+    },
+    { deep: true }
+  );
+
+  optionOps.value.target = selectData;
+  selectOptions.value = true;
+};
+
+/**
+ * 格式化对象成可读性较高的对象
+ * @param objs
+ */
+const parseKeys = (objs: any) => {
+  let obj = {} as any;
+  for (let it in objs) {
+    // console.log(it);
+    obj[it] = objs[it]["name"];
+  }
+  return obj;
+};
+
+const saveLocalConfigurature = () => {
+  try {
+    basicStore.MusicMetaPrepare = JSON.parse(localConfiguration.value);
+    importorexport.value = false;
+  } catch (error) {
+    console.log(error);
+    ElMessage({
+      type: "error",
+      message: "出现错误: " + error,
+    });
+  }
+};
+
+const loadLocalConfigurature = () => {
+  localConfiguration.value = JSON.stringify(basicStore.MusicMetaPrepare);
+  importorexport.value = true;
+};
+</script>
+
+<template>
+  <div class="content">
+    <div
+      class="safe-area"
+      :style="{
+        'padding-top': title_height_size + 'px',
+      }"
+    >
+      <div class="cards">
+        <el-card class="box-card">
+          <template #header>
+            <div class="card-header">
+              <span>Downloader setting</span>
+            </div>
+          </template>
+          <div class="function">
+            <div class="threadControl">
+              <div>Download Thread</div>
+              <el-input
+                v-model="basicStore.config.concurrency.num"
+                placeholder="Download Thread, Default 16"
+                :prefix-icon="Switch"
+              />
+            </div>
+            <div class="threadControl">
+              <div>Download Path</div>
+              <el-input
+                v-model="basicStore.config.concurrency.downloadFolder"
+                placeholder="Absolute path"
+                :prefix-icon="Download"
+              />
+            </div>
+            <div class="threadControl">
+              <el-checkbox v-model="basicStore.config.concurrency.saveLyric" label="单独保存歌词文件" />
+            </div>
+            <div class="actions">
+              <el-button type="success" @click="save_config">Save</el-button>
+            </div>
+          </div>
+        </el-card>
+
+        <el-card class="box-card">
+          <template #header>
+            <div class="card-header">
+              <span>Track Keyword Filter</span>
+            </div>
+          </template>
+          <div class="filter-area">
+            <div class="filter-list">
+              <el-tag
+                closable
+                round
+                effect="dark"
+                class="filter-key"
+                v-for="it in basicStore.filterKeys"
+                :key="it"
+                @close="deleteKeys(it)"
+                >{{ it }}
+              </el-tag>
+              <div>
+                <el-input v-model="customKey" placeholder="Input custom keyword" @keyup="enterClick" />
+              </div>
+            </div>
+          </div>
+        </el-card>
+
+        <el-card class="box-card">
+          <template #header>
+            <div class="card-header">
+              <span>Match Metadata</span>
+            </div>
+          </template>
+          <el-dialog
+            class="dialog-attr"
+            destroy-on-close
+            align-center
+            v-model="selectOptions"
+            :title="'Select' + optionOps.title"
+          >
+            <el-select v-model="optionOps.target" placeholder="Select API" style="width: 100%">
+              <el-option v-for="(it, vl) in optionOps.data" :label="it" :value="vl" />
+            </el-select>
+          </el-dialog>
+          <el-dialog
+            class="dialog-attribute"
+            destroy-on-close
+            align-center
+            v-model="importorexport"
+            width="90%"
+            :title="'Import or Export Rules'"
+          >
+            <div class="dialog-cts">
+              <textarea v-model="localConfiguration" placeholder="Paste JSON"> </textarea>
+              <el-button type="primary" @click="saveLocalConfigurature">Save</el-button>
+            </div>
+          </el-dialog>
+          <div class="filter-area">
+            <div class="filter-list">
+              <div class="add-filter" v-for="(prepare, inx) in basicStore.MusicMetaPrepare">
+                从<span
+                  class="option-style"
+                  @click="
+                    showOptions(
+                      prepare.platform,
+                      (vl: string) => {
+                        prepare.platform = vl;
+                      },
+                      platformListv2
+                    )
+                  "
+                >
+                  {{ platformListv2[prepare.platform] }} </span
+                >Match metadata when downloaded:
+                <el-divider />
+                <div v-if="prepare.metas && prepare.metas.length === 0">Empty Rules</div>
+                <div class="extra-meta" v-for="(metas_instance, inx1) in prepare.metas">
+                  <div class="extra-info">
+                    用<span
+                      class="option-style"
+                      @click="
+                        showOptions(
+                          metas_instance.meta_support,
+                          (vl: string) => {
+                            metas_instance.meta_support = vl;
+                          },
+                          MetaInfomationSupport
+                        )
+                      "
+                    >
+                      {{ MetaInfomationSupport[metas_instance.meta_support] }} </span
+                    >Match Metadata from {{ platformListv2[prepare.platform] }}
+                    <span
+                      class="option-style"
+                      @click="
+                        showOptions(
+                          metas_instance.meta_types,
+                          (vl: string) => {
+                            metas_instance.meta_types = vl;
+                          },
+                          MetaInfomationSupportTypes
+                        )
+                      "
+                    >
+                      {{ MetaInfomationSupportTypes[metas_instance.meta_types] }} </span
+                    >{{ MetaInfomationSupportOptions[metas_instance.meta_option]["lint"] }}
+                    <el-input v-model="metas_instance.from" placeholder="Input Metadata" />
+
+                    <span
+                      class="option-style"
+                      @click="
+                        showOptions(
+                          metas_instance.meta_option,
+                          (vl: string) => {
+                            metas_instance.meta_option = vl;
+                          },
+                          parseKeys(MetaInfomationSupportOptions)
+                        )
+                      "
+                    >
+                      {{ MetaInfomationSupportOptions[metas_instance.meta_option]["name"] }} </span
+                    >为<el-input v-model="metas_instance.to" placeholder="Replace with" /><br /><br />
+                    <el-button type="danger" @click="prepare.metas.splice(inx1, 1)">Delete Rule</el-button>
+                  </div>
+                </div>
+                <el-divider />
+                <el-button type="success" @click="addFilter(prepare)">Add Rule</el-button>
+                <el-button type="danger" @click="basicStore.MusicMetaPrepare.splice(inx, 1)">Delete Rules</el-button>
+              </div>
+            </div>
+            <div>
+              <el-button type="success" @click="addFilterBase">Add Rules</el-button>
+              <el-button type="primary" @click="loadLocalConfigurature">Add external Rules</el-button>
+            </div>
+          </div>
+        </el-card>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+@media screen and (max-width: 550px) {
+  .content {
+    .title-name {
+      font-size: 15px !important;
+    }
+
+    .button-bar {
+      font-size: 10px !important;
+      border-top: 1px solid var(--text-15) !important;
+      padding: 15px 0 !important;
+    }
+
+    .filter-area {
+      .el-tag {
+        padding: 15px 20px;
+        font-size: 14px;
+      }
+    }
+  }
+}
+
+.content {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+
+  .title-name {
+    font-size: 28px;
+    text-align: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba(black, 0.1);
+    backdrop-filter: blur(10px);
+    height: 45px;
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: solid 1px rgba(white, 0.1);
+    z-index: 1;
+
+    .logo {
+      height: 40px;
+      will-change: filter;
+    }
+  }
+
+  .safe-area {
+    flex: 1;
+    overflow-x: hidden;
+
+    .cards {
+      margin: 10px;
+
+      .el-card {
+        margin-bottom: 10px;
+      }
+    }
+  }
+
+  .button-bar {
+    font-size: 15px;
+    //color: rgba(black, 0.6);
+    border-top: 1px solid rgba(black, 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 30px 0;
+    transition: padding 0.5s;
+  }
+
+  .function {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .threadControl {
+    margin-bottom: 10px;
+    display: inline-flex;
+    flex-direction: column;
+  }
+
+  .box-card {
+    // padding: 10px;
+  }
+
+  :deep(.el-card__body) {
+    padding: 10px;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 10px;
+  }
+
+  .dialog-cts {
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+
+    textarea {
+      flex: 1;
+      margin-bottom: 10px;
+      resize: none;
+      overflow-y: scroll;
+      outline: none;
+      border: none;
+      border-radius: 8px;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba($color: #000000, $alpha: 0.15);
+    }
+
+    textarea::-webkit-scrollbar {
+      width: 5px;
+    }
+
+    textarea::-webkit-scrollbar-track {
+      border-radius: 10px;
+      background: black;
+    }
+
+    textarea::-webkit-scrollbar-thumb {
+      background: rgba(white, 0.4);
+      border-radius: 10px;
+    }
+
+    textarea::-webkit-scrollbar-thumb:hover {
+      background: rgba(white, 0.8);
+    }
+  }
+
+  .filter-area {
+    display: flex;
+    flex-direction: column;
+
+    .el-tag {
+      margin-right: 10px;
+      margin-bottom: 10px;
+      transition: padding 0.5s;
+
+      &:last-of-type {
+      }
+    }
+  }
+
+  .actions {
+    display: flex;
+    justify-content: right;
+
+    .el-button {
+      min-width: 130px;
+    }
+  }
+
+  .meta-list {
+    margin-top: 10px;
+    border-radius: 8px;
+    padding: 10px;
+    border: solid 0.2px rgba($color: #000000, $alpha: 0.15);
+    box-shadow: 0 2px 5px rgba($color: #000000, $alpha: 0.1);
+  }
+
+  .extra-meta {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .extra-info {
+    display: inline-block;
+    margin-bottom: 10px;
+
+    .el-input {
+      width: auto;
+    }
+  }
+
+  .add-filter {
+    border: solid 1px var(--black);
+    padding: 10px;
+    border-radius: 4px;
+    // box-shadow: 0 5px 6px rgba($color: #000000, $alpha: .1);
+    margin-bottom: 10px;
+  }
+
+  .option-style {
+    border: solid 1px var(--white-50);
+    margin: 5px 10px;
+    padding: 5px 10px;
+    display: inline-block;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.075, 0.82, 0.165, 1);
+
+    &:hover {
+      background-color: var(--black);
+      color: var(--white);
+    }
+  }
+}
+</style>
