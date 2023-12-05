@@ -15,6 +15,14 @@
       "shell": {
         "all": false,
         "open": true
+      },
+      "dialog": {
+        "all": true,
+        "ask": true,
+        "confirm": true,
+        "message": true,
+        "open": true,
+        "save": true
       }
     },
     "bundle": {
@@ -31,8 +39,8 @@
         "fullscreen": false,
         "resizable": true,
         "title": "rubicon",
-        "width": 800,
-        "height": 600
+        "width": 1080,
+        "height": 675
       }
     ]
   }

@@ -1,7 +1,7 @@
 {
   "name": "rubicon",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
@@ -12,6 +12,7 @@
   "dependencies": {
     "@sakun/system.css": "^0.1.11",
     "@tauri-apps/api": "^1.5.1",
+    "@types/node": "^20.10.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
