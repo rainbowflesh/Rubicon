@@ -1,12 +1,6 @@
 # Rubicon
 
-Simple but not crude, aim to download Genshin Impact Doujin MMD Music in _nerd way_.
-
-## Why rust
-
-- [x] blazingly Fast
-- [x] Safe
-- [x] <del>Unnecessary Complex</del> Robust
+Simple but not crude, get the Genshin Impact Doujin MMD Music search engine in _nerd way_ now [👉👉👉](https://github.com/rainbowflesh/Rubicon/releases).
 
 ## Preview
 
@@ -14,22 +8,38 @@ Simple but not crude, aim to download Genshin Impact Doujin MMD Music in _nerd w
 
 ## Roadmap
 
+### Server Side
+
 - [ ] Rewrite downloader service in rust
-  - [ ] Embedding netease api
-- [ ] Rework fontend user interface
-  - [x] Design new UI
-    - [x] Main page
-    - [ ] Search box
-    - [ ] preferences
-    - [ ] about
-  - [ ] Design LOGO
-  - [ ] Rework setting, downloading UX
-- [x] Tauri compatible
+  - [ ] q
+  - [ ] kw
+  - [ ] migu
+  - [ ] MyFreeMP3
+- [ ] Support mock data
+- [ ] Embedding netease api
+
+### Client Side
+
+- [x] Design UI
+  - [x] Main page
+  - [x] Search box
+  - [ ] Result card
+  - [ ] Downloading
+  - [ ] preferences
+  - [ ] about
+  - [ ] Vibrancy?
+- [ ] Design LOGO
 - [ ] Multiplatform
 
 ## Usage
 
 ```shell
 pnpm i
-pnpm dev
+pnpm tauri dev
 ```
+
+## Why rust
+
+- [x] blAzInGly fASt
+- [x] Safe
+- [x] <del>Unnecessary Complex</del> Robust

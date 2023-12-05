@@ -6,7 +6,7 @@ function App() {
     <div className="container">
       <MenuBar />
       <p className="heading center">Rubicon</p>
-      <p className="description">The Music Downloader Aim to Download Genshin Impact Doujin MMD Music In Nerd Way.</p>
+      <p className="description">very good music search engine.</p>
       <SearchBox />
     </div>
   );
