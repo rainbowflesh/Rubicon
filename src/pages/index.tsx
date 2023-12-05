@@ -11,6 +11,22 @@ function App() {
 
   return (
     <div className="container">
+      <ul role="menu-bar">
+        <li role="menu-item" tabIndex={0} aria-haspopup="true">
+          File
+          <ul role="menu">
+            <li role="menu-item">
+              <a href="#preferences">Preferences</a>
+            </li>
+            <li role="menu-item" className="divider">
+              <a href="#menu">Another Action</a>
+            </li>
+            <li role="menu-item">
+              <a href="#menu">Exit</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
       <p className="heading center">Rubicon</p>
       <p>The Music Downloader Aim to Download Genshin Impact Doujin MMD Music In Nerd Way.</p>
       <form

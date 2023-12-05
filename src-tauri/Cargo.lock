@@ -2233,8 +2233,9 @@ checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 
 [[package]]
 name = "rubicon"
-version = "0.0.0"
+version = "0.0.1"
 dependencies = [
+ "anyhow",
  "serde",
  "serde_json",
  "tauri",
